@@ -1,0 +1,14 @@
+{
+  "name": "zmk-fw-deployer",
+  "version": "0.1.0",
+  "description": "Deploy ZMK firmware to split keyboard",
+  "license": "MIT",
+  "main": "deploy-zmk.js",
+  "dependencies": {
+    "dotenv": "^16.0.3"
+  },
+  "scripts": {
+    "deploy": "node deploy-zmk.js",
+    "watch": "node deploy-zmk.js --watch"
+  }
+}
