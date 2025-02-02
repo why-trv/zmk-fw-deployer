@@ -12,6 +12,9 @@ const FW_VOLUME_NAME = 'nicenano';
 
 const args = process.argv.slice(2);
 const WATCH_MODE = args.includes('--watch');
+const sayIndex = args.findIndex(arg => arg.startsWith('--say'));
+const SAY_MODE = sayIndex !== -1;
+const SAY_VOICE = SAY_MODE && args[sayIndex].includes('=') ? args[sayIndex].split('=')[1] : null;
 
 const TMP_DIR = path.join(__dirname, 'tmp');
 
@@ -212,6 +215,15 @@ async function waitForDrive(side, requireFresh = false) {
   const spinner = new Spinner(`Waiting for bootloader volume, ${ANSI.BOLD}double-click the reset button on the ${formatSide(side)}${ANSI.BOLD} part of your keyboard...${ANSI.RESET}`);
   
   try {
+    // If we're on macOS and say mode is enabled, use voice prompt
+    if (os.platform() === 'darwin' && SAY_MODE) {
+      const sayArgs = [`Uh-oh! Double-click the ${side} reset button`];
+      if (SAY_VOICE) {
+        sayArgs.unshift('-v', SAY_VOICE);
+      }
+      execFile('say', sayArgs);
+    }
+
     // If we require a fresh mount, wait for drive to be absent first
     if (requireFresh) {
       while (true) {
