@@ -398,12 +398,20 @@ async function checkForNewFirmware(owner, repo, token, startTime, lastReportedWo
     }
   }
 
-  // Then check for completed artifacts
-  const artifact = await getLatestArtifact(owner, repo, token);
-  const artifactCreated = new Date(artifact.created_at);
-  
-  if (artifactCreated > startTime) {
-    return { type: 'completed', artifact };
+  try {
+    // Then check for completed artifacts
+    const artifact = await getLatestArtifact(owner, repo, token);
+    const artifactCreated = new Date(artifact.created_at);
+    
+    if (artifactCreated > startTime) {
+      return { type: 'completed', artifact };
+    }
+  } catch (error) {
+    // Don't throw for incomplete builds, just return in_progress state
+    if (runningWorkflow) {
+      return { type: 'in_progress', workflow: runningWorkflow };
+    }
+    throw error; // Throw other errors
   }
   
   return null;
@@ -418,6 +426,7 @@ async function watchAndDeploy() {
     const { owner, repo, token } = getGitHubCredentials();
     let lastArtifactId = null;
     let lastReportedWorkflowId = null;
+    let lastReportedIncomplete = false;
     let isBusy = false;
     const startTime = new Date();
     
@@ -431,8 +440,13 @@ async function watchAndDeploy() {
         
         if (result) {
           if (result.type === 'in_progress') {
+            if (!lastReportedIncomplete) {
+              console.log('Not all artifacts are ready yet, waiting...');
+              lastReportedIncomplete = true;
+            }
             lastReportedWorkflowId = result.workflow.id;
           } else if (result.type === 'completed' && lastArtifactId !== result.artifact.id) {
+            lastReportedIncomplete = false;
             console.log(`New firmware build detected from commit ${formatCommitInfo(
               result.artifact.commit.sha,
               result.artifact.commit.branch,
