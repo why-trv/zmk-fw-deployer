@@ -132,9 +132,9 @@ async function getLatestArtifact(owner, repo, token) {
           const artifact = artifacts.artifacts[0];
           const run = await getWorkflowRun(artifact.workflow_run.id, owner, repo, token);
           
-          // Check if the workflow run is completed
+          // Instead of rejecting, return null if workflow isn't complete
           if (run.status !== 'completed' || run.conclusion !== 'success') {
-            reject(new Error('Latest workflow run is not completed successfully'));
+            resolve(null);
             return;
           }
 
@@ -321,7 +321,7 @@ async function deployFirmware(existingArtifact = null) {
       console.log('Fetching latest firmware artifact...');
       artifact = await getLatestArtifact(owner, repo, token);
     }
-    console.log(`Found firmware from commit ${formatCommitInfo(artifact.commit.sha, artifact.commit.branch, artifact.commit.message)}`);
+    console.log(`Found firmware artifact from commit ${formatCommitInfo(artifact.commit.sha, artifact.commit.branch, artifact.commit.message)}`);
     
     console.log('Downloading firmware...');
     const zipPath = await downloadArtifact(artifact, owner, repo, token);
@@ -447,11 +447,6 @@ async function watchAndDeploy() {
             lastReportedWorkflowId = result.workflow.id;
           } else if (result.type === 'completed' && lastArtifactId !== result.artifact.id) {
             lastReportedIncomplete = false;
-            console.log(`New firmware build detected from commit ${formatCommitInfo(
-              result.artifact.commit.sha,
-              result.artifact.commit.branch,
-              result.artifact.commit.message
-            )}`);
             lastArtifactId = result.artifact.id;
             
             isBusy = true;
