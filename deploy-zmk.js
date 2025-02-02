@@ -123,6 +123,13 @@ async function getLatestArtifact(owner, repo, token) {
         if (artifacts.artifacts && artifacts.artifacts.length > 0) {
           const artifact = artifacts.artifacts[0];
           const run = await getWorkflowRun(artifact.workflow_run.id, owner, repo, token);
+          
+          // Check if the workflow run is completed
+          if (run.status !== 'completed' || run.conclusion !== 'success') {
+            reject(new Error('Latest workflow run is not completed successfully'));
+            return;
+          }
+
           resolve({ 
             ...artifact, 
             commit: {
