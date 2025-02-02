@@ -314,6 +314,10 @@ async function deployFirmware(existingArtifact = null) {
 
     let leftFirmware, rightFirmware;
 
+    if (await findMountedDrive()) {
+      console.warn(`Found an already mounted drive - assuming this is the ${formatSide('left')} side`);
+    }
+
     // Deploy left side (can be already mounted)
     const leftDrive = await waitForDrive('left');
     leftFirmware = await copyFirmware('left', leftDrive);
