@@ -274,14 +274,28 @@ async function copyFirmware(side, drivePath) {
   const firmwarePath = path.join(TMP_DIR, firmwareFile);
   const targetPath = path.join(drivePath, firmwareFile);
   
-  try {
-    fs.copyFileSync(firmwarePath, targetPath);
-    console.log(`${formatSide(capitalizeFirstLetter(side))} side firmware deployed!`);
-    return firmwareFile;
-  } catch (error) {
-    if (error.code === 'EIO') {
-      console.log(`${formatSide(capitalizeFirstLetter(side))} side firmware likely deployed successfully (drive disconnected during copy)`);
+  const attemptCopy = () => {
+    try {
+      fs.copyFileSync(firmwarePath, targetPath);
+      console.log(`${formatSide(capitalizeFirstLetter(side))} side firmware deployed!`);
       return firmwareFile;
+    } catch (error) {
+      if (error.code === 'EIO') {
+        console.log(`${formatSide(capitalizeFirstLetter(side))} side firmware likely deployed successfully (drive disconnected during copy)`);
+        return firmwareFile;
+      }
+      throw error;
+    }
+  };
+
+  try {
+    return attemptCopy();
+  } catch (error) {
+    if (error.code === 'EACCES') {
+      console.log(`Permission denied, retrying ${formatSide(side)} side deployment...`);
+      // Small delay before retry
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      return attemptCopy();
     }
     throw new Error(`Failed to copy firmware to ${formatSide(side)} side: ${error.message}`);
   }
