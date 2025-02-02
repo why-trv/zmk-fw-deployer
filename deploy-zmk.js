@@ -7,6 +7,11 @@ const { execFile } = require('node:child_process');
 const { promisify } = require('node:util');
 require('dotenv').config();
 
+let ora;
+(async () => {
+  ora = (await import('ora')).default;
+})();
+
 const GITHUB_ACTIONS_POLLING_INTERVAL = 10000; // ms
 const FW_VOLUME_NAME = 'nicenano';
 
@@ -179,40 +184,19 @@ async function downloadArtifact(artifact, owner, repo, token) {
   });
 }
 
-class Spinner {
-  constructor(message) {
-    this.frames = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
-    this.message = message;
-    this.currentFrame = 0;
-    this.interval = null;
-    this.isSpinning = false;
-  }
-
-  start() {
-    this.isSpinning = true;
-    this.interval = setInterval(() => {
-      process.stdout.write(`\r${this.frames[this.currentFrame]} ${this.message}`);
-      this.currentFrame = (this.currentFrame + 1) % this.frames.length;
-    }, 80);
-  }
-
-  stop() {
-    if (this.interval) {
-      clearInterval(this.interval);
-      process.stdout.write('\n');
-      process.stdout.write('\r' + ' '.repeat(this.message.length + 2) + '\r');
-      this.isSpinning = false;
-    }
-  }
-}
-
 function formatSide(side) {
   return `${ANSI.BOLD}${side.toLowerCase() === 'left' ? ANSI.BLUE : ANSI.MAGENTA}${side}${ANSI.RESET}`;
 }
 
 async function waitForDrive(side, requireFresh = false) {
   console.log('');
-  const spinner = new Spinner(`Waiting for bootloader volume, ${ANSI.BOLD}double-click the reset button on the ${formatSide(side)}${ANSI.BOLD} part of your keyboard...${ANSI.RESET}`);
+  if (!ora) {
+    throw new Error('ora not initialized');
+  }
+  const spinner = ora({
+    text: `Waiting for bootloader volume, ${ANSI.BOLD}double-click the reset button on the ${formatSide(side)}${ANSI.BOLD} part of your keyboard...${ANSI.RESET}`,
+    spinner: 'dots'
+  });
   
   try {
     // If we're on macOS and say mode is enabled, use voice prompt
