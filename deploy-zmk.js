@@ -401,10 +401,12 @@ async function checkForNewFirmware(owner, repo, token, startTime, lastReportedWo
   try {
     // Then check for completed artifacts
     const artifact = await getLatestArtifact(owner, repo, token);
-    const artifactCreated = new Date(artifact.created_at);
-    
-    if (artifactCreated > startTime) {
-      return { type: 'completed', artifact };
+    if (artifact) {
+      const artifactCreated = new Date(artifact.created_at);
+      
+      if (artifactCreated > startTime) {
+        return { type: 'completed', artifact };
+      }
     }
   } catch (error) {
     // Don't throw for incomplete builds, just return in_progress state
@@ -432,7 +434,7 @@ async function watchAndDeploy() {
     
     console.log(`Watching for new firmware builds from ${formatGitHubUrl(owner, repo)}...`);
     
-    const interval = setInterval(async () => {
+    const checkForUpdates = async () => {
       if (isBusy) return;
 
       try {
@@ -459,7 +461,12 @@ async function watchAndDeploy() {
       } catch (error) {
         console.error('Error checking for updates:', error.message);
       }
-    }, GITHUB_ACTIONS_POLLING_INTERVAL);
+    };
+
+    // Run check immediately
+    await checkForUpdates();
+    // Then run on timer
+    const interval = setInterval(checkForUpdates, GITHUB_ACTIONS_POLLING_INTERVAL);
 
     // Handle graceful shutdown
     process.on('SIGINT', () => {
