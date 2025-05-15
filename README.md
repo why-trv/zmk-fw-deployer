@@ -2,7 +2,7 @@
 
 A quick and dirty Node.js script to make deploying **ZMK** split keyboard firmware artifacts from GitHub Actions a tiny bit easier.
 
-Looks for the latest build artifact in your ZMK config repo (`deploy` mode) or the newly built artifacts (`watch` mode), downloads, unzips and 'copies' the firmware to the **nice!nano** bootloader volume (`NICENANO`). The only thing you need to do is double-click the reset button on the halves of your keyboard when the script asks you to. 
+Looks for the latest build artifact in your ZMK config repo (`deploy` mode) or the newly built artifacts (`watch` mode), downloads, unzips and 'copies' the firmware to the **nice!nano** bootloader volume (`NICENANO`). The only thing you need to do is double-click the reset button (or even better, tap the `&bootloader` key) on the halves of your keyboard when the script asks you to.
 
 **Important:** If a `NICENANO` volume is already mounted when running the script, it's assumed to be the **left** half of the keyboard.
 
